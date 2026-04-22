@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface FollowUpRepository extends JpaRepository<FollowUp, Long> {
     List<FollowUp> findByStatus(String status);
+    long countByLeadId(Long leadId);
 }

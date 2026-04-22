@@ -32,9 +32,13 @@ public class AutomationController {
             Long leadId = Long.valueOf(payload.get("leadId").toString());
             
             EventType event = EventType.valueOf(eventStr);
-            triggerService.triggerEvent(event, leadId);
             
-            return ResponseEntity.ok("Automation triggered for " + event);
+            Integer aiScore = payload.containsKey("aiScore") ? (Integer) payload.get("aiScore") : null;
+            String aiAction = payload.containsKey("aiAction") ? (String) payload.get("aiAction") : null;
+
+            triggerService.triggerEvent(event, leadId, aiScore, aiAction);
+            
+            return ResponseEntity.ok("Automation triggered for " + event + (aiAction != null ? " with AI Action: " + aiAction : ""));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }

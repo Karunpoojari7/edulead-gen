@@ -13,17 +13,16 @@ import org.springframework.security.config.Customizer;
 public class WebSecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .headers(headers -> headers.frameOptions(frame -> frame.disable())) // For H2 console
-            .httpBasic(Customizer.withDefaults());
-        
-        return http.build();
-    }
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/**").permitAll()   // allow all APIs
+            .anyRequest().permitAll()                 // allow everything
+        )
+        .httpBasic(AbstractHttpConfigurer::disable)   // ❌ disable login popup
+        .formLogin(AbstractHttpConfigurer::disable);  // ❌ disable form login
+
+    return http.build();
+}
 }

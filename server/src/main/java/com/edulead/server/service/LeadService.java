@@ -10,9 +10,11 @@ import java.util.Optional;
 public class LeadService {
 
     private final LeadRepository leadRepository;
+    private final AiAutomationService aiAutomationService;
 
-    public LeadService(LeadRepository leadRepository) {
+    public LeadService(LeadRepository leadRepository, AiAutomationService aiAutomationService) {
         this.leadRepository = leadRepository;
+        this.aiAutomationService = aiAutomationService;
     }
 
     public List<Lead> getAllLeads() {
@@ -31,11 +33,28 @@ public class LeadService {
     public Lead createLead(Lead lead) {
         Lead savedLead = leadRepository.save(lead);
         
+        // Trigger AI Prediction
+        AiAutomationService.MlResult aiResult = aiAutomationService.getPrediction(savedLead);
+        if (aiResult != null) {
+            System.out.println("AI Prediction for Lead " + savedLead.getId() + ": " + aiResult.getCategory() + " (Score: " + aiResult.getScore() + ")");
+            try {
+                savedLead.setScore(Lead.LeadScore.valueOf(aiResult.getCategory()));
+                leadRepository.save(savedLead);
+            } catch (Exception e) {
+                System.err.println("Failed to update Lead Score from AI: " + e.getMessage());
+            }
+        }
+
         // Trigger Automation Service
         try {
             java.util.Map<String, Object> payload = new java.util.HashMap<>();
             payload.put("event", "LEAD_CREATED");
             payload.put("leadId", savedLead.getId());
+            // Add AI context to the automation trigger
+            if (aiResult != null) {
+                payload.put("aiScore", aiResult.getScore());
+                payload.put("aiAction", aiResult.getAction());
+            }
             restTemplate.postForEntity(AUTOMATION_SERVICE_URL, payload, String.class);
             System.out.println("Automation triggered for Lead ID: " + savedLead.getId());
         } catch (Exception e) {
